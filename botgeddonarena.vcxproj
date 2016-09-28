@@ -69,10 +69,13 @@
     <AdditionalSourcesToCopyMapping>asio/include</AdditionalSourcesToCopyMapping>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="ArenaStates.cpp" />
     <ClCompile Include="LargeDigitDriver.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SegmentLedState.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArenaStates.h" />
     <ClInclude Include="asio\include\asio.hpp" />
     <ClInclude Include="asio\include\asio\async_result.hpp" />
     <ClInclude Include="asio\include\asio\basic_datagram_socket.hpp" />
@@ -394,14 +397,17 @@
     <ClInclude Include="asio\include\asio\write.hpp" />
     <ClInclude Include="asio\include\asio\write_at.hpp" />
     <ClInclude Include="asio\include\asio\yield.hpp" />
+    <ClInclude Include="ColorTriplet.h" />
     <ClInclude Include="LargeDigitDriver.h" />
     <ClInclude Include="LedSegment.h" />
+    <ClInclude Include="SegmentLedState.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <ClCompile>
       <CppLanguageStandard>c++1y</CppLanguageStandard>
       <AdditionalIncludeDirectories>.\asio\include;$(StlIncludeDirectories);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ASIO_STANDALONE</PreprocessorDefinitions>
+      <AdditionalOptions>-std=c++1y %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <LibraryDependencies>mraa</LibraryDependencies>

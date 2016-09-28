@@ -4,56 +4,7 @@
 #include <chrono>
 using namespace std::chrono_literals;
 
-//Given a number, or '-', shifts it out to the display
-uint8_t LargeDigitDriver::GetLedSegments(uint8_t number, bool decimal)
-{
-    //    -  A
-    //   / / F/B
-    //    -  G
-    //   / / E/C
-    //    -. D/DP
 
-    const uint8_t a = 1 << 0;
-    const uint8_t b = 1 << 6;
-    const uint8_t c = 1 << 5;
-    const uint8_t d = 1 << 4;
-    const uint8_t e = 1 << 3;
-    const uint8_t f = 1 << 1;
-    const uint8_t g = 1 << 2;
-    const uint8_t dp = 1 << 7;
-
-    uint8_t segments = 0;
-
-    switch (number)
-    {
-    case 1: segments = b | c; break;
-    case 2: segments = a | b | d | e | g; break;
-    case 3: segments = a | b | c | d | g; break;
-    case 4: segments = f | g | b | c; break;
-    case 5: segments = a | f | g | c | d; break;
-    case 6: segments = a | f | g | e | c | d; break;
-    case 7: segments = a | b | c; break;
-    case 8: segments = a | b | c | d | e | f | g; break;
-    case 9: segments = a | b | c | d | f | g; break;
-    case 0: segments = a | b | c | d | e | f; break;
-    case '1': segments = b | c; break;
-    case '2': segments = a | b | d | e | g; break;
-    case '3': segments = a | b | c | d | g; break;
-    case '4': segments = f | g | b | c; break;
-    case '5': segments = a | f | g | c | d; break;
-    case '6': segments = a | f | g | e | c | d; break;
-    case '7': segments = a | b | c; break;
-    case '8': segments = a | b | c | d | e | f | g; break;
-    case '9': segments = a | b | c | d | f | g; break;
-    case '0': segments = a | b | c | d | e | f; break;
-    case ' ': segments = 0; break;
-    case 'c': segments = g | e | d; break;
-    case '-': segments = g; break;
-    }
-
-    if (decimal) segments |= dp;
-    return segments;
-}
 
 LargeDigitDriver::LargeDigitDriver(mraa::Gpio& latch, mraa::Gpio& clock, mraa::Gpio& data) :
     _end(false), _latch(latch), _clock(clock), _data(data)
@@ -81,7 +32,7 @@ void LargeDigitDriver::UpdateLeds(SegmentLedState state)
 {
     _latch.write(0);
 
-    auto seg = GetLedSegments(state.segments[2], false);
+    auto seg = SegmentLedState::GetSegmentDigits(state.segments[2]);
     for (int x = 0; x < 8; x++)
     {
         _clock.write(0);
@@ -90,7 +41,7 @@ void LargeDigitDriver::UpdateLeds(SegmentLedState state)
         _clock.write(1);
     }
 
-    seg = GetLedSegments(state.segments[1], false);
+    seg = SegmentLedState::GetSegmentDigits(state.segments[1]);
     for (int x = 0; x < 8; x++)
     {
         _clock.write(0);
@@ -99,7 +50,7 @@ void LargeDigitDriver::UpdateLeds(SegmentLedState state)
         _clock.write(1);
     }
 
-    seg = GetLedSegments(state.segments[0], true);
+    seg = SegmentLedState::GetSegmentDigits(state.segments[0]);
     for (int x = 0; x < 8; x++)
     {
         _clock.write(0);

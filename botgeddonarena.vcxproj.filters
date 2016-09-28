@@ -3,6 +3,8 @@
   <ItemGroup>
     <ClCompile Include="LargeDigitDriver.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SegmentLedState.cpp" />
+    <ClCompile Include="ArenaStates.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LargeDigitDriver.h" />
@@ -970,6 +972,9 @@
       <Filter>asio</Filter>
     </ClInclude>
     <ClInclude Include="LedSegment.h" />
+    <ClInclude Include="SegmentLedState.h" />
+    <ClInclude Include="ColorTriplet.h" />
+    <ClInclude Include="ArenaStates.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="asio">

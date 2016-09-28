@@ -3,12 +3,7 @@
 #include <mraa.hpp>
 #include <thread>
 #include <mutex>
-
-struct SegmentLedState
-{
-    uint8_t segments[4];
-    uint8_t dots;
-};
+#include "SegmentLedState.h"
 
 class LargeDigitDriver
 {
@@ -19,7 +14,6 @@ public:
     void UpdateSegments(const SegmentLedState& state);
 protected:
     void ThreadProc();
-    uint8_t GetLedSegments(uint8_t number, bool decimal);
     void UpdateLeds(SegmentLedState state);
 
 private:
