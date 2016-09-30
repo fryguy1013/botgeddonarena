@@ -60,6 +60,34 @@ void draw_segment(uint8_t segment)
     glEnd();
 }
 
+void DrawSegments(SegmentLedState timer)
+{
+    for (int i = 0; i < 4; i++) {
+        glPushMatrix();
+            
+        glScalef(0.25f, 1.0f, 1.0f);
+        glTranslatef(static_cast<float>(i), 0.0f, 0.0f);
+
+        draw_segment(timer.segments[i]);
+
+        glPopMatrix();
+    }
+}
+
+void DrawLargeSegments(SegmentLedState timer)
+{
+    for (int i = 0; i < 3; i++) {
+        glPushMatrix();
+            
+        glScalef(0.25f, 1.0f, 1.0f);
+        glTranslatef(static_cast<float>(i), 0.0f, 0.0f);
+
+        draw_segment(timer.segments[i]);
+
+        glPopMatrix();
+    }
+}
+
 int main(void)
 {
     GLFWwindow* window;
@@ -67,8 +95,6 @@ int main(void)
     /* Initialize the library */
     if (!glfwInit())
         return -1;
-
-    std::unique_ptr<LedAnimation> state;
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -89,18 +115,18 @@ int main(void)
     glTranslated(-1, 1, 0);
     glScaled(2, -2, 1);
 
+    StateMachine state;
+    state.ChangeState(ArenaState::Staging);
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-        if (state == nullptr || state->IsAnimationComplete())
-            state = GetAnimation(ArenaState::Staging);
-
-        state->Tick(redDown, blueDown);
+        state.Tick(redDown, blueDown);
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        auto colors = state->GetColors();
+        auto colors = state.GetColors();
 
         glPushMatrix();
         glScalef(0.5f, 1.0f, 1.0f);
@@ -125,17 +151,26 @@ int main(void)
         }
         glPopMatrix();
 
-        for (int i = 0; i < 4; i++) {
-            glPushMatrix();
-            
-            glScalef(0.25f, 1.0f, 1.0f);
-            glTranslatef(static_cast<float>(i), 0.0f, 0.0f);
+        auto redTimer = state.GetSegmentLed();
+        glPushMatrix();
+        glTranslatef(0.5f, 0.0f, 0.0f);
+        glScalef(0.3f, 0.3f, 1.0f);
+        DrawSegments(redTimer);
+        glPopMatrix();
 
-            auto timer = state->GetSegmentLed();
-            draw_segment(timer.segments[i]);
+        auto blueTimer = state.GetSegmentLed();
+        glPushMatrix();
+        glTranslatef(0.5f, 0.3f, 0.0f);
+        glScalef(0.3f, 0.3f, 1.0f);
+        DrawSegments(blueTimer);
+        glPopMatrix();
 
-            glPopMatrix();
-        }
+        auto scoreTimer = state.GetSegmentLed();
+        glPushMatrix();
+        glTranslatef(0.5f, 0.6f, 0.0f);
+        glScalef(0.4f, 0.4f, 1.0f);
+        DrawLargeSegments(scoreTimer);
+        glPopMatrix();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

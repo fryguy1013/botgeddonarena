@@ -20,12 +20,12 @@ struct ColorTriplet
             return rgb;
         }
 
-        region = h / 43;
-        remainder = (h - (region * 43)) * 6;
+        region = (uint8_t)(h / 43);
+        remainder = (uint8_t)((h - (region * 43)) * 6);
 
-        p = (v * (255 - s)) >> 8;
-        q = (v * (255 - ((s * remainder) >> 8))) >> 8;
-        t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
+        p = (uint8_t)((v * (255 - s)) >> 8);
+        q = (uint8_t)((v * (255 - ((s * remainder) >> 8))) >> 8);
+        t = (uint8_t)((v * (255 - ((s * (255 - remainder)) >> 8))) >> 8);
 
         switch (region)
         {

@@ -8,16 +8,16 @@
 class LedAnimation
 {
 public:
-    static const int NumVertical = 48;
-    static const int NumHorizontal = 8;
-    static const int N = NumVertical*NumHorizontal;
+    static constexpr int NumVertical = 48;
+    static constexpr int NumHorizontal = 8;
+    static constexpr int N = NumVertical*NumHorizontal;
 
-    virtual ~LedAnimation() { }
+    virtual ~LedAnimation() = default;
 
-    virtual void Tick(bool red, bool blue) { }
+    virtual void Tick(bool red, bool blue) = 0;
     virtual std::array<ColorTriplet, N> GetColors() = 0;
     virtual SegmentLedState GetSegmentLed() = 0;
-    virtual bool IsAnimationComplete() = 0;
+    virtual std::array<bool, 2> GetButtonLeds() = 0;
 };
 
 enum class ArenaState {
@@ -29,4 +29,18 @@ enum class ArenaState {
     End
 };
 
-std::unique_ptr<LedAnimation> GetAnimation(ArenaState state);
+class StateMachine
+{
+public:
+    void ChangeState(ArenaState state);
+
+    void Tick(bool red, bool blue) const { _state->Tick(red, blue); }
+    std::array<ColorTriplet, LedAnimation::N> GetColors() const { return _state->GetColors(); }
+    SegmentLedState GetSegmentLed() const { return _state->GetSegmentLed(); }
+    std::array<bool, 2> GetButtonLeds() const { return _state->GetButtonLeds(); }
+
+private:
+    std::unique_ptr<LedAnimation> GetAnimation(ArenaState state);
+
+    std::unique_ptr<LedAnimation> _state;
+};

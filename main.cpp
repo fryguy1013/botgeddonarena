@@ -220,62 +220,23 @@ int main(int argc, char **argv)
     //    }
     //});
 
-    bool readyRed = false;
-    bool readyBlue = false;
-
     //ArenaState state = ArenaState::Fighting;
     //std::unique_ptr<LedAnimation<NUM_LED>> fx = std::make_unique<Fighting<NUM_LED>>();
 
-    ArenaState state = ArenaState::Staging;
-    std::unique_ptr<LedAnimation> fx = GetAnimation(ArenaState::Staging);
-
-    blueButtonLed->write(0);
-    redButtonLed->write(0);
+    StateMachine state;
+    state.ChangeState(ArenaState::Staging);
 
     while (!done)
     {
         //ioService.poll();
 
-        fx->Tick(readyRed, readyBlue);
+        state.Tick(redButton->read(), blueButton->read());
 
-        if (state == ArenaState::Staging)
-        {
-            if (!readyRed && redButton->read()) {
-                readyRed = true;
-                std::cout << "Red ready!\n";
-                redButtonLed->write(1);
-            }
-            if (!readyBlue && blueButton->read()) {
-                readyBlue = true;
-                std::cout << "Blue ready!\n";
-                blueButtonLed->write(1);
-            }
-            if (readyRed && readyBlue && fx->IsAnimationComplete()) {
-                fx = GetAnimation(ArenaState::PreCountdown);
-                state = ArenaState::PreCountdown;
-                std::cout << "woowoosha\n";
-            }
-        }
-        else if (state == ArenaState::PreCountdown)
-        {
-            if (fx->IsAnimationComplete()) {
-                fx = GetAnimation(ArenaState::Countdown);
-                state = ArenaState::Countdown;
-                std::cout << "Getting ready for countdown.\n";
-            }
-        }
-        else if (state == ArenaState::Countdown)
-        {
-            if (fx->IsAnimationComplete()) {
-                fx = GetAnimation(ArenaState::Fighting);
-                state = ArenaState::Fighting;
-            }
-        }
-        else if (state == ArenaState::Fighting)
-        {
-        }
+        auto buttonLeds = state.GetButtonLeds();
+        redButtonLed->write(buttonLeds[0] ? 0 : 1);
+        blueButtonLed->write(buttonLeds[1] ? 0 : 1);
 
-        auto segmentLed = fx->GetSegmentLed();
+        auto segmentLed = state.GetSegmentLed();
         i2c.address(BlueSegmentLedI2cAddress);
         i2c.write((uint8_t*)segmentLed.segments, 4);
         i2c.writeReg(0x77, segmentLed.dots);
@@ -287,7 +248,7 @@ int main(int argc, char **argv)
         i2c.address(BigSegmentLedI2cAddress);
         i2c.write((uint8_t*)segmentLed.segments, 3);
 
-        leds.Refresh(fx->GetColors());
+        leds.Refresh(state.GetColors());
 
         std::this_thread::sleep_for(2ms);
     }

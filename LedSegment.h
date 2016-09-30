@@ -49,14 +49,14 @@ private:
             {
                 uint8_t s = ((fullColorBits >> (23 - i)) & 0x01);
                 if (s) {
-                    _spiBuf[bitNum / 8] |= 1 << (7 - (bitNum % 8));  bitNum++;
-                    _spiBuf[bitNum / 8] |= 1 << (7 - (bitNum % 8));  bitNum++;
-                    _spiBuf[bitNum / 8] |= 0 << (7 - (bitNum % 8));  bitNum++;
+                    _spiBuf[bitNum / 8] |= (uint8_t)(1 << (7 - (bitNum % 8)));  bitNum++;
+                    _spiBuf[bitNum / 8] |= (uint8_t)(1 << (7 - (bitNum % 8)));  bitNum++;
+                    _spiBuf[bitNum / 8] |= (uint8_t)(0 << (7 - (bitNum % 8)));  bitNum++;
                 }
                 else {
-                    _spiBuf[bitNum / 8] |= 1 << (7 - (bitNum % 8));  bitNum++;
-                    _spiBuf[bitNum / 8] |= 0 << (7 - (bitNum % 8));  bitNum++;
-                    _spiBuf[bitNum / 8] |= 0 << (7 - (bitNum % 8));  bitNum++;
+                    _spiBuf[bitNum / 8] |= (uint8_t)(1 << (7 - (bitNum % 8)));  bitNum++;
+                    _spiBuf[bitNum / 8] |= (uint8_t)(0 << (7 - (bitNum % 8)));  bitNum++;
+                    _spiBuf[bitNum / 8] |= (uint8_t)(0 << (7 - (bitNum % 8)));  bitNum++;
                 }
             }
         }

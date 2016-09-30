@@ -45,7 +45,11 @@ public:
         _lastColorTime.fill(-100);
     }
 
-    virtual std::array<ColorTriplet, N> GetColors() override
+    void Tick(bool red, bool blue) override
+    {
+    }
+
+    std::array<ColorTriplet, N> GetColors() override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
@@ -77,15 +81,14 @@ public:
         return ret;
     }
 
-    virtual SegmentLedState GetSegmentLed() override
+    SegmentLedState GetSegmentLed() override
     {
         return SegmentLedState{ { ' ',' ',' ',' ' }, 0 };
     }
 
-    virtual bool IsAnimationComplete() override
+    std::array<bool, 2> GetButtonLeds() override
     {
-        std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
-        return duration.count() > animEnd;
+        return{ false, false };
     }
 
 private:
@@ -97,7 +100,7 @@ private:
     std::array<float, N> _lastColorTime;
 };
 
-class WooWoosha2 : public LedAnimation
+class PreCountdownAnimation : public LedAnimation
 {
     static constexpr float fadeUpStart = 3.0f;
     static constexpr float fadeUpEnd = 4.5f;
@@ -116,7 +119,8 @@ class WooWoosha2 : public LedAnimation
     };
 
 public:
-    WooWoosha2() :
+    PreCountdownAnimation(StateMachine* state) :
+        _state(state),
         _lastSegmentTime(0),
         _speed(0.700f)
     {
@@ -126,7 +130,14 @@ public:
         _rng = std::default_random_engine(std::random_device()());
     }
 
-    virtual std::array<ColorTriplet, N> GetColors() override
+    void Tick(bool red, bool blue) override
+    {
+        std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
+        if (duration.count() > animEnd)
+            _state->ChangeState(ArenaState::Countdown);
+    }
+
+    std::array<ColorTriplet, N> GetColors() override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
@@ -173,18 +184,18 @@ public:
         return ret;
     }
 
-    virtual SegmentLedState GetSegmentLed() override
+    SegmentLedState GetSegmentLed() override
     {
         return SegmentLedState{ { ' ',' ',' ',' ' }, 0 };
     }
 
-    virtual bool IsAnimationComplete() override
+    std::array<bool, 2> GetButtonLeds() override
     {
-        std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
-        return duration.count() > animEnd;
+        return{ false, false };
     }
 
 private:
+    StateMachine* _state;
     std::chrono::time_point<std::chrono::steady_clock> _start;
     float _lastSegmentTime;
     float _speed;
@@ -194,13 +205,14 @@ private:
     std::default_random_engine _rng;
 };
 
-constexpr float WooWoosha2::particleSpeed;
+constexpr float PreCountdownAnimation::particleSpeed;
 
 
 class XmasTree : public LedAnimation
 {
 public:
-    XmasTree()
+    XmasTree(StateMachine* state) :
+        _state(state)
     {
         _start = std::chrono::steady_clock::now();
 
@@ -221,7 +233,14 @@ public:
         }
     }
 
-    virtual std::array<ColorTriplet, N> GetColors() override
+    void Tick(bool red, bool blue) override
+    {
+        std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
+        if (duration.count() > 3.0f)
+            _state->ChangeState(ArenaState::Fighting);
+    }
+
+    std::array<ColorTriplet, N> GetColors() override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
@@ -247,7 +266,7 @@ public:
         return ret;
     }
 
-    virtual SegmentLedState GetSegmentLed() override
+    SegmentLedState GetSegmentLed() override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
@@ -259,13 +278,13 @@ public:
         return SegmentLedState{ { '3',' ',' ',' ' }, 0 };
     }
 
-    virtual bool IsAnimationComplete() override
+    std::array<bool, 2> GetButtonLeds() override
     {
-        std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
-        return duration.count() > 3.0f;
+        return{ false, false };
     }
 
 private:
+    StateMachine* _state;
     std::chrono::time_point<std::chrono::steady_clock> _start;
     std::array<int, N> _dootRegion;
 };
@@ -273,13 +292,18 @@ private:
 class Fighting : public LedAnimation
 {
 public:
-    Fighting()
+    Fighting(StateMachine* state) :
+        _state(state)
     {
         _start = std::chrono::steady_clock::now();
-        _end = _start + std::chrono::seconds(15);
+        _end = _start + std::chrono::seconds(120);
     }
 
-    virtual std::array<ColorTriplet, N> GetColors() override
+    void Tick(bool red, bool blue) override
+    {
+    }
+
+    std::array<ColorTriplet, N> GetColors() override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
@@ -296,7 +320,7 @@ public:
         return ret;
     }
 
-    virtual SegmentLedState GetSegmentLed() override
+    SegmentLedState GetSegmentLed() override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
@@ -311,9 +335,9 @@ public:
         {
             return SegmentLedState {
                 {
-                    '0' + static_cast<uint8_t>(remTime / 60),
-                    '0' + static_cast<uint8_t>((remTime % 60) / 10),
-                    '0' + static_cast<uint8_t>(remTime % 10),
+                    '0' + static_cast<char>(remTime / 60),
+                    '0' + static_cast<char>(remTime % 60) / 10,
+                    '0' + static_cast<char>(remTime % 10),
                     ' '
                 },
                 static_cast<uint8_t>(1)
@@ -323,12 +347,13 @@ public:
         return SegmentLedState{ { 'E','n','d',' ' }, 0 };
     }
 
-    virtual bool IsAnimationComplete() override
+    std::array<bool, 2> GetButtonLeds() override
     {
-        return false;
+        return{ true, true };
     }
 
 private:
+    StateMachine* _state;
     std::chrono::time_point<std::chrono::steady_clock> _start;
     std::chrono::time_point<std::chrono::steady_clock> _end;
 };
@@ -340,23 +365,29 @@ class StagingAnim : public LedAnimation
     static constexpr float totalAnimFromLastButton = 3.5f;
 
 public:
-    StagingAnim()
+    StagingAnim(StateMachine* state) :
+        _state(state)
     {
         _start = std::chrono::steady_clock::now();
         _blueStart = std::chrono::time_point<std::chrono::steady_clock>::max();
         _redStart = std::chrono::time_point<std::chrono::steady_clock>::max();
     }
 
-    virtual void Tick(bool red, bool blue) override
+    void Tick(bool red, bool blue) override
     {
         auto now = std::chrono::steady_clock::now();
         if (now < _redStart && red)
             _redStart = now;
         if (now < _blueStart && blue)
             _blueStart = now;
+
+        std::chrono::duration<float> redDuration = std::chrono::steady_clock::now() - _redStart;
+        std::chrono::duration<float> blueDuration = std::chrono::steady_clock::now() - _blueStart;
+        if (redDuration.count() > totalAnimFromLastButton && blueDuration.count() > totalAnimFromLastButton)
+            _state->ChangeState(ArenaState::PreCountdown);
     }
 
-    virtual std::array<ColorTriplet, N> GetColors() override
+    std::array<ColorTriplet, N> GetColors() override
     {
         auto now = std::chrono::steady_clock::now();
 
@@ -385,19 +416,19 @@ public:
         return ret;
     }
 
-    virtual SegmentLedState GetSegmentLed() override
+    SegmentLedState GetSegmentLed() override
     {
         return SegmentLedState{ { 's','t','r','t' }, 0 };
     }
 
-    virtual bool IsAnimationComplete() override
+    std::array<bool, 2> GetButtonLeds() override
     {
-        std::chrono::duration<float> redDuration = std::chrono::steady_clock::now() - _redStart;
-        std::chrono::duration<float> blueDuration = std::chrono::steady_clock::now() - _blueStart;
-        return redDuration.count() > totalAnimFromLastButton && blueDuration.count() > totalAnimFromLastButton;
+        return { _redStart == std::chrono::time_point<std::chrono::steady_clock>::max(),
+            _blueStart == std::chrono::time_point<std::chrono::steady_clock>::max() };
     }
 
 private:
+    StateMachine* _state;
     std::chrono::time_point<std::chrono::steady_clock> _start;
     std::chrono::time_point<std::chrono::steady_clock> _blueStart;
     std::chrono::time_point<std::chrono::steady_clock> _redStart;
@@ -406,12 +437,18 @@ private:
 class Boring : public LedAnimation
 {
 public:
-    Boring()
+    Boring(StateMachine* state) :
+        _state(state)
     {
         _start = std::chrono::steady_clock::now();
     }
 
-    virtual std::array<ColorTriplet, N> GetColors() override
+
+    void Tick(bool red, bool blue) override
+    {
+    }
+
+    std::array<ColorTriplet, N> GetColors() override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
@@ -424,37 +461,43 @@ public:
         return ret;
     }
 
-    virtual SegmentLedState GetSegmentLed() override
+    SegmentLedState GetSegmentLed() override
     {
         return SegmentLedState{};
     }
 
-    virtual bool IsAnimationComplete() override
+    std::array<bool, 2> GetButtonLeds() override
     {
-        return false;
+        return { false, false };
     }
 
 private:
+    StateMachine* _state;
     std::chrono::time_point<std::chrono::steady_clock> _start;
 };
 
 
-std::unique_ptr<LedAnimation> GetAnimation(ArenaState state)
+void StateMachine::ChangeState(ArenaState state)
+{
+    _state = GetAnimation(state);
+}
+
+std::unique_ptr<LedAnimation> StateMachine::GetAnimation(ArenaState state)
 {
     switch (state)
     {
     case ArenaState::Staging:
-        return std::make_unique<StagingAnim>();
+        return std::make_unique<StagingAnim>(this);
     case ArenaState::PreCountdown:
-        return std::make_unique<WooWoosha2>();
+        return std::make_unique<PreCountdownAnimation>(this);
     case ArenaState::Countdown:
-        return std::make_unique<XmasTree>();
+        return std::make_unique<XmasTree>(this);
     case ArenaState::Fighting:
-        return std::make_unique<Fighting>();
+        return std::make_unique<Fighting>(this);
     case ArenaState::Paused:
-        return std::make_unique<Boring>();
+        return std::make_unique<Boring>(this);
     case ArenaState::End:
     default:
-        return std::make_unique<Boring>();
+        return std::make_unique<Boring>(this);
     }
 }
