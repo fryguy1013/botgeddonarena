@@ -5,6 +5,14 @@
 #include <array>
 #include <memory>
 
+struct WorldState
+{
+    bool redButton;
+    bool blueButton;
+    bool refButton;
+    bool resetButton;
+};
+
 class LedAnimation
 {
 public:
@@ -14,7 +22,7 @@ public:
 
     virtual ~LedAnimation() = default;
 
-    virtual void Tick(bool red, bool blue) = 0;
+    virtual void Tick(WorldState& world) = 0;
     virtual std::array<ColorTriplet, N> GetColors() = 0;
     virtual SegmentLedState GetSegmentLed() = 0;
     virtual std::array<bool, 2> GetButtonLeds() = 0;
@@ -34,7 +42,7 @@ class StateMachine
 public:
     void ChangeState(ArenaState state);
 
-    void Tick(bool red, bool blue) const { _state->Tick(red, blue); }
+    void Tick(WorldState& world) const { _state->Tick(world); }
     std::array<ColorTriplet, LedAnimation::N> GetColors() const { return _state->GetColors(); }
     SegmentLedState GetSegmentLed() const { return _state->GetSegmentLed(); }
     std::array<bool, 2> GetButtonLeds() const { return _state->GetButtonLeds(); }

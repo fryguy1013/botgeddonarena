@@ -45,7 +45,7 @@ public:
         _lastColorTime.fill(-100);
     }
 
-    void Tick(bool red, bool blue) override
+    void Tick(WorldState& world) override
     {
     }
 
@@ -130,7 +130,7 @@ public:
         _rng = std::default_random_engine(std::random_device()());
     }
 
-    void Tick(bool red, bool blue) override
+    void Tick(WorldState& world) override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         if (duration.count() > animEnd)
@@ -233,7 +233,7 @@ public:
         }
     }
 
-    void Tick(bool red, bool blue) override
+    void Tick(WorldState& world) override
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         if (duration.count() > 3.0f)
@@ -299,7 +299,7 @@ public:
         _end = _start + std::chrono::seconds(120);
     }
 
-    void Tick(bool red, bool blue) override
+    void Tick(WorldState& world) override
     {
     }
 
@@ -325,8 +325,8 @@ public:
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
 
-        if (curTime < 1.0f)
-            return SegmentLedState{ { 'F','I','G','T' }, 0 };
+        //if (curTime < 1.0f)
+        //    return SegmentLedState{ { 'F','I','G','T' }, 0 };
 
         std::chrono::duration<float> remDuration = _end - std::chrono::steady_clock::now();
         int remTime = static_cast<int>(ceil(remDuration.count()));
@@ -373,12 +373,12 @@ public:
         _redStart = std::chrono::time_point<std::chrono::steady_clock>::max();
     }
 
-    void Tick(bool red, bool blue) override
+    void Tick(WorldState& world) override
     {
         auto now = std::chrono::steady_clock::now();
-        if (now < _redStart && red)
+        if (now < _redStart && world.redButton)
             _redStart = now;
-        if (now < _blueStart && blue)
+        if (now < _blueStart && world.blueButton)
             _blueStart = now;
 
         std::chrono::duration<float> redDuration = std::chrono::steady_clock::now() - _redStart;
@@ -444,7 +444,7 @@ public:
     }
 
 
-    void Tick(bool red, bool blue) override
+    void Tick(WorldState& world) override
     {
     }
 

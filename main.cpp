@@ -118,6 +118,14 @@ int main(int argc, char **argv)
         std::cerr << "Can't set digital pin as input, exiting" << std::endl;
         return MRAA_ERROR_UNSPECIFIED;
     }
+    refButton->mode(mraa::MODE_PULLDOWN);
+
+    mraa::Gpio* resetButton = new mraa::Gpio(7);
+    if (refButton->dir(mraa::DIR_IN) != mraa::SUCCESS) {
+        std::cerr << "Can't set digital pin as input, exiting" << std::endl;
+        return MRAA_ERROR_UNSPECIFIED;
+    }
+    resetButton->mode(mraa::MODE_PULLDOWN);
 
     mraa::Gpio* redButtonLed = new mraa::Gpio(5);
     if (redButtonLed->dir(mraa::DIR_OUT) != mraa::SUCCESS) {
@@ -226,11 +234,17 @@ int main(int argc, char **argv)
     StateMachine state;
     state.ChangeState(ArenaState::Staging);
 
+    WorldState world;
+
     while (!done)
     {
         //ioService.poll();
 
-        state.Tick(redButton->read(), blueButton->read());
+        world.redButton = redButton->read();
+        world.blueButton = blueButton->read();
+        world.refButton = refButton->read();
+        world.resetButton = resetButton->read();
+        state.Tick(world);
 
         auto buttonLeds = state.GetButtonLeds();
         redButtonLed->write(buttonLeds[0] ? 0 : 1);
@@ -250,7 +264,7 @@ int main(int argc, char **argv)
 
         leds.Refresh(state.GetColors());
 
-        std::this_thread::sleep_for(2ms);
+        std::this_thread::sleep_for(10ms);
     }
 
     std::cout << "exiting safely.\n";
