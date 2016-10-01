@@ -29,6 +29,7 @@ public:
 };
 
 enum class ArenaState {
+    PreStaging,
     Staging,
     PreCountdown,
     Countdown,

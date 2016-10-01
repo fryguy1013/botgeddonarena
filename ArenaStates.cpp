@@ -301,6 +301,8 @@ public:
 
     void Tick(WorldState& world) override
     {
+        if (world.redButton || world.blueButton)
+            _state->ChangeState(ArenaState::End);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -384,7 +386,7 @@ public:
         std::chrono::duration<float> redDuration = std::chrono::steady_clock::now() - _redStart;
         std::chrono::duration<float> blueDuration = std::chrono::steady_clock::now() - _blueStart;
         if (redDuration.count() > totalAnimFromLastButton && blueDuration.count() > totalAnimFromLastButton)
-            _state->ChangeState(ArenaState::PreCountdown);
+            _state->ChangeState(ArenaState::Countdown);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -434,10 +436,73 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> _redStart;
 };
 
-class Boring : public LedAnimation
+class PreStagingAnim : public LedAnimation
+{
+    static constexpr float fadeOutStart = 1.5f;
+
+public:
+    PreStagingAnim(StateMachine* state) :
+        _state(state)
+    {
+        _start = std::chrono::steady_clock::now();
+        _startingTime = std::chrono::time_point<std::chrono::steady_clock>::max();
+    }
+
+
+    void Tick(WorldState& world) override
+    {
+        auto now = std::chrono::steady_clock::now();
+        if (now < _startingTime && world.refButton)
+            _startingTime = now;
+
+        std::chrono::duration<float> startingDuration = std::chrono::steady_clock::now() - _startingTime;
+        if (startingDuration.count() > fadeOutStart)
+            _state->ChangeState(ArenaState::Staging);
+    }
+
+    std::array<ColorTriplet, N> GetColors() override
+    {
+        auto now = std::chrono::steady_clock::now();
+        std::chrono::duration<float> duration = now - _start;
+        float curTime = duration.count();
+
+        float timeSinceDoot = curTime / 3.0f;
+        float dootiness = std::clamp(timeSinceDoot / fadeOutStart, 0.0f, 1.0f);
+
+        std::chrono::duration<float> startingDuration = now - _startingTime;
+        float startingTime = startingDuration.count();
+        if (startingTime > 0)
+            dootiness = std::clamp(1.0f - startingTime / fadeOutStart, 0.0f, 1.0f);
+
+        std::array<ColorTriplet, N> ret;
+        for (int i = 0; i < N; i++) {
+            auto val = static_cast<uint8_t>(dootiness * MaxLightCounts);
+            ret[i] = ColorTriplet{ val, val, val };
+        }
+
+        return ret;
+    }
+
+    SegmentLedState GetSegmentLed() override
+    {
+        return SegmentLedState{};
+    }
+
+    std::array<bool, 2> GetButtonLeds() override
+    {
+        return { false, false };
+    }
+
+private:
+    StateMachine* _state;
+    std::chrono::time_point<std::chrono::steady_clock> _start;
+    std::chrono::time_point<std::chrono::steady_clock> _startingTime;
+};
+
+class End : public LedAnimation
 {
 public:
-    Boring(StateMachine* state) :
+    End(StateMachine* state) :
         _state(state)
     {
         _start = std::chrono::steady_clock::now();
@@ -446,6 +511,8 @@ public:
 
     void Tick(WorldState& world) override
     {
+        if (world.resetButton)
+            _state->ChangeState(ArenaState::Staging);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -453,9 +520,13 @@ public:
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         float curTime = duration.count();
 
+        float timeSinceDoot = curTime / 3.0f;
+        float dootiness = std::clamp(1.0f - timeSinceDoot, 0.0f, 1.0f);
+
         std::array<ColorTriplet, N> ret;
         for (int i = 0; i < N; i++) {
-            ret[i] = ColorTriplet{ 0, 0, 0 };
+            auto val = static_cast<uint8_t>(dootiness * MaxLightCounts);
+            ret[i] = ColorTriplet{ val, val, 0 };
         }
 
         return ret;
@@ -486,6 +557,8 @@ std::unique_ptr<LedAnimation> StateMachine::GetAnimation(ArenaState state)
 {
     switch (state)
     {
+    case ArenaState::PreStaging:
+        return std::make_unique<PreStagingAnim>(this);
     case ArenaState::Staging:
         return std::make_unique<StagingAnim>(this);
     case ArenaState::PreCountdown:
@@ -495,9 +568,9 @@ std::unique_ptr<LedAnimation> StateMachine::GetAnimation(ArenaState state)
     case ArenaState::Fighting:
         return std::make_unique<Fighting>(this);
     case ArenaState::Paused:
-        return std::make_unique<Boring>(this);
+        return std::make_unique<End>(this);
     case ArenaState::End:
     default:
-        return std::make_unique<Boring>(this);
+        return std::make_unique<End>(this);
     }
 }

@@ -232,7 +232,7 @@ int main(int argc, char **argv)
     //std::unique_ptr<LedAnimation<NUM_LED>> fx = std::make_unique<Fighting<NUM_LED>>();
 
     StateMachine state;
-    state.ChangeState(ArenaState::Staging);
+    state.ChangeState(ArenaState::PreStaging);
 
     WorldState world;
 
