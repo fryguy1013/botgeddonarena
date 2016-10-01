@@ -12,6 +12,7 @@
 
 namespace {
     const int MaxLightCounts = 120;
+    const int MidLightCounts = 60;
 }
 
 namespace std {
@@ -134,7 +135,7 @@ public:
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         if (duration.count() > animEnd)
-            _state->ChangeState(ArenaState::Countdown);
+            _state->ChangeState(ArenaState::Countdown, world);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -237,7 +238,7 @@ public:
     {
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
         if (duration.count() > 3.0f)
-            _state->ChangeState(ArenaState::Fighting);
+            _state->ChangeState(ArenaState::Fighting, world);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -292,17 +293,22 @@ private:
 class Fighting : public LedAnimation
 {
 public:
-    Fighting(StateMachine* state) :
+    Fighting(StateMachine* state, WorldState& world) :
         _state(state)
     {
         _start = std::chrono::steady_clock::now();
-        _end = _start + std::chrono::seconds(120);
+        _end = _start + std::chrono::milliseconds(static_cast<int>(world.timeRemaining * 1000));
     }
 
     void Tick(WorldState& world) override
     {
         if (world.redButton || world.blueButton)
-            _state->ChangeState(ArenaState::End);
+            _state->ChangeState(ArenaState::End, world);
+        if (world.refButton) {
+            std::chrono::duration<float> duration = _end - std::chrono::steady_clock::now();
+            world.timeRemaining = duration.count();
+            _state->ChangeState(ArenaState::Paused, world);
+        }
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -386,7 +392,7 @@ public:
         std::chrono::duration<float> redDuration = std::chrono::steady_clock::now() - _redStart;
         std::chrono::duration<float> blueDuration = std::chrono::steady_clock::now() - _blueStart;
         if (redDuration.count() > totalAnimFromLastButton && blueDuration.count() > totalAnimFromLastButton)
-            _state->ChangeState(ArenaState::Countdown);
+            _state->ChangeState(ArenaState::Countdown, world);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -456,8 +462,10 @@ public:
             _startingTime = now;
 
         std::chrono::duration<float> startingDuration = std::chrono::steady_clock::now() - _startingTime;
-        if (startingDuration.count() > fadeOutStart)
-            _state->ChangeState(ArenaState::Staging);
+        if (startingDuration.count() > fadeOutStart) {
+            _state->ChangeState(ArenaState::Staging, world);
+            world.timeRemaining = 120;
+        }
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -476,7 +484,7 @@ public:
 
         std::array<ColorTriplet, N> ret;
         for (int i = 0; i < N; i++) {
-            auto val = static_cast<uint8_t>(dootiness * MaxLightCounts);
+            auto val = static_cast<uint8_t>(dootiness * MidLightCounts);
             ret[i] = ColorTriplet{ val, val, val };
         }
 
@@ -499,6 +507,68 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> _startingTime;
 };
 
+class PausedAnim : public LedAnimation
+{
+public:
+    PausedAnim(StateMachine* state) :
+        _state(state)
+    {
+        _start = std::chrono::steady_clock::now();
+        _releasedPause = false;
+    }
+
+    void Tick(WorldState& world) override
+    {
+        _remTime = static_cast<int>(ceil(world.timeRemaining));
+            
+        if (!world.refButton)
+            _releasedPause = true;
+        if (world.refButton && _releasedPause)
+            _state->ChangeState(ArenaState::Countdown, world);
+    }
+
+    std::array<ColorTriplet, N> GetColors() override
+    {
+        std::chrono::duration<float> duration = std::chrono::steady_clock::now() - _start;
+        float curTime = duration.count();
+
+        float timeSinceDoot = curTime / 3.0f;
+        float dootiness = std::clamp(1.0f - timeSinceDoot, 0.0f, 1.0f);
+
+        std::array<ColorTriplet, N> ret;
+        for (int i = 0; i < N; i++) {
+            auto val = static_cast<uint8_t>(dootiness * MaxLightCounts);
+            ret[i] = ColorTriplet{ val, val, 0 };
+        }
+
+        return ret;
+    }
+
+    SegmentLedState GetSegmentLed() override
+    {
+        return SegmentLedState{
+            {
+                '0' + static_cast<char>(_remTime / 60),
+                '0' + static_cast<char>(_remTime % 60) / 10,
+                '0' + static_cast<char>(_remTime % 10),
+                ' '
+            },
+            static_cast<uint8_t>(1)
+        };
+    }
+
+    std::array<bool, 2> GetButtonLeds() override
+    {
+        return { false, false };
+    }
+
+private:
+    StateMachine* _state;
+    std::chrono::time_point<std::chrono::steady_clock> _start;
+    bool _releasedPause;
+    int _remTime;
+};
+
 class End : public LedAnimation
 {
 public:
@@ -512,7 +582,7 @@ public:
     void Tick(WorldState& world) override
     {
         if (world.resetButton)
-            _state->ChangeState(ArenaState::Staging);
+            _state->ChangeState(ArenaState::Staging, world);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -548,12 +618,12 @@ private:
 };
 
 
-void StateMachine::ChangeState(ArenaState state)
+void StateMachine::ChangeState(ArenaState state, WorldState& world)
 {
-    _state = GetAnimation(state);
+    _state = GetAnimation(state, world);
 }
 
-std::unique_ptr<LedAnimation> StateMachine::GetAnimation(ArenaState state)
+std::unique_ptr<LedAnimation> StateMachine::GetAnimation(ArenaState state, WorldState& world)
 {
     switch (state)
     {
@@ -566,9 +636,9 @@ std::unique_ptr<LedAnimation> StateMachine::GetAnimation(ArenaState state)
     case ArenaState::Countdown:
         return std::make_unique<XmasTree>(this);
     case ArenaState::Fighting:
-        return std::make_unique<Fighting>(this);
+        return std::make_unique<Fighting>(this, world);
     case ArenaState::Paused:
-        return std::make_unique<End>(this);
+        return std::make_unique<PausedAnim>(this);
     case ArenaState::End:
     default:
         return std::make_unique<End>(this);

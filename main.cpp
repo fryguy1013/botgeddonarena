@@ -231,10 +231,10 @@ int main(int argc, char **argv)
     //ArenaState state = ArenaState::Fighting;
     //std::unique_ptr<LedAnimation<NUM_LED>> fx = std::make_unique<Fighting<NUM_LED>>();
 
-    StateMachine state;
-    state.ChangeState(ArenaState::PreStaging);
-
     WorldState world;
+
+    StateMachine state;
+    state.ChangeState(ArenaState::PreStaging, world);
 
     while (!done)
     {

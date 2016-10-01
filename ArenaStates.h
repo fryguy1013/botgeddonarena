@@ -11,6 +11,7 @@ struct WorldState
     bool blueButton;
     bool refButton;
     bool resetButton;
+    float timeRemaining = 0;
 };
 
 class LedAnimation
@@ -41,7 +42,7 @@ enum class ArenaState {
 class StateMachine
 {
 public:
-    void ChangeState(ArenaState state);
+    void ChangeState(ArenaState state, WorldState& world);
 
     void Tick(WorldState& world) const { _state->Tick(world); }
     std::array<ColorTriplet, LedAnimation::N> GetColors() const { return _state->GetColors(); }
@@ -49,7 +50,7 @@ public:
     std::array<bool, 2> GetButtonLeds() const { return _state->GetButtonLeds(); }
 
 private:
-    std::unique_ptr<LedAnimation> GetAnimation(ArenaState state);
+    std::unique_ptr<LedAnimation> GetAnimation(ArenaState state, WorldState& world);
 
     std::unique_ptr<LedAnimation> _state;
 };
