@@ -192,13 +192,17 @@ int main(int argc, char **argv)
 
     i2c.frequency(mraa::I2cMode::I2C_FAST);
 
-    //i2c.address(RedSegmentLedI2cAddress);
-    //i2c.writeReg(0x79, 0);
-    //i2c.writeReg(0x77, 0x00);
+    i2c.address(RedSegmentLedI2cAddress);
+    i2c.writeReg(0x79, 0);
+    i2c.writeReg(0x77, 0x00);
 
-    //i2c.address(BlueSegmentLedI2cAddress);
-    //i2c.writeReg(0x79, 0);
-    //i2c.writeReg(0x77, 0x00);
+    i2c.address(BlueSegmentLedI2cAddress);
+    i2c.writeReg(0x79, 0);
+    i2c.writeReg(0x77, 0x00);
+
+    i2c.address(BigSegmentLedI2cAddress);
+    i2c.writeReg(0x79, 0);
+    i2c.writeReg(0x77, 0x00);
 
 
 
@@ -252,14 +256,18 @@ int main(int argc, char **argv)
 
         auto segmentLed = state.GetSegmentLed();
         i2c.address(BlueSegmentLedI2cAddress);
+        i2c.writeReg(0x79, 0);
         i2c.write((uint8_t*)segmentLed.segments, 4);
         i2c.writeReg(0x77, segmentLed.dots);
+
         i2c.address(RedSegmentLedI2cAddress);
+        i2c.writeReg(0x79, 0);
         i2c.write((uint8_t*)segmentLed.segments, 4);
         i2c.writeReg(0x77, segmentLed.dots);
 
         //largeDigits.UpdateSegments(segmentLed);
         i2c.address(BigSegmentLedI2cAddress);
+        i2c.writeReg(0x79, 0);
         i2c.write((uint8_t*)segmentLed.segments, 3);
 
         leds.Refresh(state.GetColors());

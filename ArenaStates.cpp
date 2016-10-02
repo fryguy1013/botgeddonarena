@@ -392,7 +392,7 @@ public:
         std::chrono::duration<float> redDuration = std::chrono::steady_clock::now() - _redStart;
         std::chrono::duration<float> blueDuration = std::chrono::steady_clock::now() - _blueStart;
         if (redDuration.count() > totalAnimFromLastButton && blueDuration.count() > totalAnimFromLastButton)
-            _state->ChangeState(ArenaState::Countdown, world);
+            _state->ChangeState(ArenaState::PreCountdown, world);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -525,6 +525,9 @@ public:
             _releasedPause = true;
         if (world.refButton && _releasedPause)
             _state->ChangeState(ArenaState::Countdown, world);
+
+        if (world.resetButton && _releasedPause)
+            _state->ChangeState(ArenaState::PreStaging, world);
     }
 
     std::array<ColorTriplet, N> GetColors() override
@@ -582,7 +585,7 @@ public:
     void Tick(WorldState& world) override
     {
         if (world.resetButton)
-            _state->ChangeState(ArenaState::Staging, world);
+            _state->ChangeState(ArenaState::PreStaging, world);
     }
 
     std::array<ColorTriplet, N> GetColors() override
